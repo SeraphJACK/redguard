@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"git.s8k.top/SeraphJACK/redguard/slog"
+	"git.s8k.top/SeraphJACK/redguard/static"
 )
 
 var listen = flag.String("listen", "0.0.0.0:8081", "HTTP Server listen address")
@@ -16,6 +17,7 @@ func Start() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/completion", handleCompletion)
 	mux.HandleFunc("/api/packet", handleGetRedPacket)
+	mux.Handle("/", http.FileServer(http.FS(static.Assets)))
 
 	log.Fatal(http.ListenAndServe(*listen, mux))
 }

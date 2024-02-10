@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <title>龙年红包</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+</head>
+<body>
+<div>
+    <div class="red-packet">
+        <div class="code-container">
+            <label for="code">输入口令</label>
+            <input id="code" type="text">
+        </div>
+        <div class="btn-container">
+            <button onclick="handleSubmit()">领取</button>
+        </div>
+    </div>
+</div>
+</body>
+<style>
+    body {
+        box-sizing: border-box;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        width: 100vw;
+        margin: 0;
+        padding: 0;
+    }
+    .red-packet {
+        vertical-align: middle;
+        box-sizing: border-box;
+        margin: auto;
+        background-color: #f12c2c;
+        color: white;
+        width: 400px;
+        min-height: 600px;
+        border-radius: 10px;
+        padding: 300px 20px 20px;
+    }
+
+    .code-container {
+        width: fit-content;
+        margin: auto auto 80px;
+    }
+
+    .code-container label {
+        width: fit-content;
+        display: block;
+        margin: auto auto 10px;
+    }
+
+    .btn-container {
+        width: fit-content;
+        margin: auto;
+    }
+
+    .btn-container button {
+        cursor: pointer;
+        height: 80px;
+        width: 80px;
+        border-radius: 50%;
+        background-color: #e9b217;
+        border: solid #fcbc1d;
+        color: white;
+    }
+</style>
+<script>
+    function handleSubmit() {
+      let code = document.getElementById("code").value;
+      fetch("/api/packet?code=" + code).then((res) => {
+        if (res.status !== 200) {
+          alert("密码错误");
+        } else {
+          res.json().then((s) => {
+            alert(s);
+          })
+        }
+      })
+    }
+</script>
+</html>

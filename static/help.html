@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <title>红包守卫</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+</head>
+<body>
+<div>
+    <div class="chat-container">
+        <div class="chat-history-container">
+
+        </div>
+        <div class="action-container">
+            <input id="chat-text" type="text" onsubmit="handleChatSubmit()" placeholder="输入问题，例如：红包一共有几个？怎么兑换？">
+            <button id="chat-submit" onclick="handleChatSubmit()">提交</button>
+        </div>
+    </div>
+</div>
+</body>
+<style>
+    body {
+        box-sizing: border-box;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        width: 100vw;
+        margin: 0;
+        padding: 0;
+    }
+
+    .action-container {
+        height: 10%;
+    }
+
+    #chat-text {
+        height: 100%;
+        width: 70%;
+    }
+
+    #chat-submit {
+        margin-left: 2%;
+        width: 15%;
+        height: 100%;
+    }
+
+    .chat-container {
+        vertical-align: middle;
+        box-sizing: border-box;
+        margin: auto;
+        border: #f12c2c solid 2px;
+        width: 80vw;
+        height: 600px;
+        border-radius: 10px;
+        padding: 20px;
+    }
+
+    .chat-history-container {
+        border: #f12c2c solid 2px;
+        height: 80%;
+        padding: 10px;
+        overflow-y: scroll;
+        margin-bottom: 20px;
+    }
+
+    .chat-history-entry-type {
+        display: inline-block;
+        font-weight: bold;
+        width: 5em;
+    }
+
+    .chat-history-entry {
+        padding-bottom: 4px;
+    }
+</style>
+<script>
+  document.getElementById("chat-text").addEventListener("keyup", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleChatSubmit();
+    }
+  });
+
+  let currentCompletion = document.getElementById("#chat-history-1");
+  let context = "";
+  let generating = false;
+
+  function handleChatSubmit() {
+    if (generating) {
+      console.log("Generating, ignore submit");
+      return;
+    }
+    let el = document.getElementById("chat-text");
+    let text = el.value;
+    el.value = "";
+    chat(text);
+  }
+
+  function onServerMessage(msg) {
+    context += msg;
+    if (msg.trim().length > 0) {
+      currentCompletion.children[1].innerText += msg;
+      let container = document.querySelector(".chat-history-container");
+      container.scrollTop = container.scrollHeight;
+    }
+  }
+
+  function chat(content) {
+    let historyContainer = document.querySelector(".chat-history-container");
+    let p = document.createElement("span");
+    p.className = "chat-history-entry-type";
+    p.innerText = "你";
+    let c = document.createElement("span");
+    c.className = "chat-history-entry-content";
+    c.innerText = content;
+
+    let entry = document.createElement("div");
+    entry.className = "chat-history-entry";
+    entry.appendChild(p);
+    entry.appendChild(c);
+
+    historyContainer.appendChild(entry);
+
+    entry = document.createElement("div");
+    entry.className = "chat-history-entry";
+    p = document.createElement("span");
+    p.className = "chat-history-entry-type";
+    p.innerText = "红包守卫";
+    c = document.createElement("span");
+    c.className = "chat-history-entry-content";
+    c.innerText = "";
+    entry.appendChild(p);
+    entry.appendChild(c);
+    historyContainer.appendChild(entry);
+    currentCompletion = entry;
+
+    context += "User: " + content + "\nRedGuard: ";
+
+    let container = document.querySelector(".chat-history-container");
+    container.scrollTop = container.scrollHeight;
+
+    generating = true;
+    document.getElementById("chat-submit").disabled = true;
+
+    fetch("/api/completion", {
+      method: 'POST',
+      body: JSON.stringify({content: context}),
+      headers: {
+        'Connection': 'keep-alive',
+        'Content-Type': 'application/json',
+        'Accept': 'text/event-stream',
+      },
+    }).then(async (rsp) => {
+      let reader = rsp.body.getReader();
+      let decoder = new TextDecoder();
+
+      while (true) {
+        let c = await reader.read();
+        if (c.done) break;
+        let text = decoder.decode(c.value);
+        text.split("\n").forEach((mtext) => {
+          if (mtext.trim().length === 0) return;
+          let msg = JSON.parse(mtext);
+          onServerMessage(msg.content);
+          if (msg.stop) {
+            generating = false;
+            document.getElementById("chat-submit").disabled = false;
+          }
+        });
+      }
+    });
+  }
+</script>
+</html>
