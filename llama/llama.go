@@ -92,6 +92,7 @@ func (c *Client) Completion(prompt string, stop []string, opts CompletionOptions
 	req, _ := http.NewRequest(http.MethodPost, c.url, bytes.NewReader(b))
 	req.Header.Set("Content-Type", "application/json; charset=utf8")
 	req.Header.Set("Accept", "text/event-stream")
+	req.Header.Set("Authorization", "Bearer "+c.apiKey)
 
 	ch := make(chan string)
 
