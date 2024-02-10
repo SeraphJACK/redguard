@@ -5,6 +5,9 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"strings"
+
+	"git.s8k.top/SeraphJACK/redguard/slog"
 )
 
 var listen = flag.String("listen", "0.0.0.0:8081", "HTTP Server listen address")
@@ -23,6 +26,9 @@ func handleGetRedPacket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	code := r.URL.Query().Get("code")
+
+	slog.Log(calcRealIP(r), "GetRedPacket", code, "")
+
 	if code != RedPacketCode {
 		w.WriteHeader(http.StatusForbidden)
 		return
@@ -32,4 +38,16 @@ func handleGetRedPacket(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	_ = json.NewEncoder(w).Encode(RedPacketResult)
+}
+
+func calcRealIP(r *http.Request) string {
+	if realIP := r.Header.Get("X-Real-IP"); realIP != "" {
+		return realIP
+	}
+	addr := r.RemoteAddr
+	colonIdx := strings.LastIndex(addr, ":")
+	if colonIdx > 0 {
+		addr = addr[:colonIdx]
+	}
+	return addr
 }
